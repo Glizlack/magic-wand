@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ Magic Wand ✨</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* Background layers */
+    .bg-layer {
+        position: fixed;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .bg-glinda {
+        background-image: url('glinda-bg.jpg');
+        opacity: 1;
+        z-index: 1;
+    }
+    .bg-george {
+        background-image: url('boy-george.jpg');
+        opacity: 0;
+        z-index: 2;
+    }
+    .bg-george.show { opacity: 1; }
+    .bg-glinda.hide { opacity: 0; }
+
+    /* Vignette overlay */
+    .vignette {
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+        pointer-events: none;
+    }
+
+    /* Sparkles container */
+    .sparkles {
+        position: fixed;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+    }
+
+    /* Wand button */
+    .wand-btn {
+        position: fixed;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 5;
+        background: rgba(99, 102, 241, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 50px;
+        padding: 16px 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s ease;
+        animation: floatWand 3s ease-in-out infinite;
+    }
+    .wand-btn:hover {
+        background: rgba(99, 102, 241, 0.4);
+        border-color: rgba(255,255,255,0.4);
+        box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
+        transform: translateX(-50%) scale(1.05);
+    }
+    .wand-btn:active {
+        transform: translateX(-50%) scale(0.95);
+    }
+    @keyframes floatWand {
+        0%, 100% { transform: translateX(-50%) translateY(0); }
+        50% { transform: translateX(-50%) translateY(-8px); }
+    }
+    .wand-icon {
+        font-size: 2rem;
+        animation: wiggle 2s ease-in-out infinite;
+    }
+    @keyframes wiggle {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-8deg); }
+        75% { transform: rotate(8deg); }
+    }
+    .wand-label {
+        color: #fff;
+        font-family: 'Georgia', serif;
+        font-size: 1.1rem;
+        letter-spacing: 0.05em;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    /* Sparkle particle */
+    .particle {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: burst 0.8s ease-out forwards;
+    }
+    @keyframes burst {
+        0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(var(--dx), var(--dy)) scale(0);
+        }
+    }
+
+    /* Flash overlay */
+    .flash {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+    }
+    .flash.active {
+        opacity: 0.3;
+    }
+</style>
+</head>
+<body>
+
+    <div class="bg-layer bg-glinda" id="bgGlinda"></div>
+    <div class="bg-layer bg-george" id="bgGeorge"></div>
+    <div class="vignette"></div>
+    <div class="sparkles" id="sparkles"></div>
+    <div class="flash" id="flash"></div>
+
+    <button class="wand-btn" id="wandBtn" onclick="castSpell()">
+        <span class="wand-icon">🪄</span>
+        <span class="wand-label" id="wandLabel">Boy George?</span>
+    </button>
+
+<script>
+let showingGeorge = false;
+
+function spawnSparkles(x, y) {
+    const container = document.getElementById('sparkles');
+    const colors = ['#c4b5fd', '#f9a8d4', '#fde68a', '#a5f3fc', '#fda4af', '#d8b4fe'];
+    const count = 18;
+
+    for (let i = 0; i < count; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const angle = (Math.PI * 2 * i) / count;
+        const distance = 60 + Math.random() * 100;
+        particle.style.cssText = `
+            left: ${x}px;
+            top: ${y}px;
+            width: ${4 + Math.random() * 6}px;
+            height: ${4 + Math.random() * 6}px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            box-shadow: 0 0 6px ${colors[Math.floor(Math.random() * colors.length)]};
+            --dx: ${Math.cos(angle) * distance}px;
+            --dy: ${Math.sin(angle) * distance}px;
+            animation-delay: ${Math.random() * 0.15}s;
+        `;
+        container.appendChild(particle);
+        setTimeout(() => particle.remove(), 1000);
+    }
+}
+
+function flash() {
+    const el = document.getElementById('flash');
+    el.classList.add('active');
+    setTimeout(() => el.classList.remove('active'), 200);
+}
+
+function castSpell() {
+    const btn = document.getElementById('wandBtn');
+    const rect = btn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    spawnSparkles(cx, cy);
+    flash();
+
+    const glinda = document.getElementById('bgGlinda');
+    const george = document.getElementById('bgGeorge');
+    const label = document.getElementById('wandLabel');
+
+    if (showingGeorge) {
+        george.classList.remove('show');
+        glinda.classList.remove('hide');
+        label.textContent = 'Boy George?';
+    } else {
+        george.classList.add('show');
+        glinda.classList.add('hide');
+        label.textContent = 'Back to Glinda ✨';
+    }
+    showingGeorge = !showingGeorge;
+}
+</script>
+</body>
+</html>
